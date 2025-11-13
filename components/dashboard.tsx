@@ -74,9 +74,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <h1 className="text-2xl font-bold text-foreground">Project Management</h1>
             <p className="text-sm text-muted-foreground mt-1">Welcome, {user.name}</p>
           </div>
-          <Button variant="outline" onClick={onLogout}>
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-foreground">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+            <Button variant="outline" onClick={onLogout}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

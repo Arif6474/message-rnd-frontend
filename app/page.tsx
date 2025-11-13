@@ -21,9 +21,18 @@ export default function Home() {
     localStorage.setItem("currentUser", JSON.stringify(userData))
   }
 
-  const handleLogout = () => {
-    setUser(null)
-    localStorage.removeItem("currentUser")
+  const handleLogout = async () => {
+    try {
+      // Import the api client dynamically to avoid issues
+      const { api } = await import("@/lib/api")
+      await api.logout()
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setUser(null)
+      localStorage.removeItem("currentUser")
+      localStorage.removeItem("accessToken")
+    }
   }
 
   if (loading) {

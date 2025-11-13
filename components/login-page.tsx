@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { api } from "@/lib/api"
 
 interface LoginPageProps {
   onLogin: (user: { id: string; name: string; email: string }) => void
@@ -13,26 +14,41 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("")
-  const [name, setName] = useState("")
+  const [password, setPassword] = useState("")
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setLoading(true)
 
-    if (!email || !name) {
-      setError("Please fill in all fields")
-      return
+    try {
+      if (!email || !password) {
+        setError("Please fill in all fields")
+        setLoading(false)
+        return
+      }
+
+      const response = await api.login({ email, password })
+
+      if (response.success && response.data) {
+        const user = {
+          id: response.data.user.id,
+          name: response.data.user.fullName || `${response.data.user.firstName} ${response.data.user.lastName}`,
+          email: response.data.user.email,
+        }
+        onLogin(user)
+      } else {
+        setError(response.error || "Login failed. Please check your credentials.")
+      }
+    } catch (err) {
+      console.error("Login error:", err)
+      setError("An unexpected error occurred. Please try again.")
+    } finally {
+      setLoading(false)
     }
-
-    const user = {
-      id: Math.random().toString(36).substr(2, 9),
-      name,
-      email,
-    }
-
-    onLogin(user)
   }
 
   return (
@@ -48,17 +64,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Full Name</label>
-              <Input
-                type="text"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-foreground mb-2">Email</label>
               <Input
                 type="email"
@@ -66,13 +71,26 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Password</label>
+              <Input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full"
+                disabled={loading}
               />
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <Button type="submit" className="w-full">
-              {isSignUp ? "Sign Up" : "Sign In"}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Signing In..." : (isSignUp ? "Sign Up" : "Sign In")}
             </Button>
           </form>
 
