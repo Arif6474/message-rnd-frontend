@@ -6,7 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { api } from "@/lib/api"
+import { apiService } from "@/lib/api-service"
 
 interface LoginPageProps {
   onLogin: (user: { id: string; name: string; email: string }) => void
@@ -31,21 +31,18 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         return
       }
 
-      const response = await api.login({ email, password })
+      const response = await apiService.auth.login({ email, password })
 
-      if (response.success && response.data) {
-        const user = {
-          id: response.data.user.id,
-          name: response.data.user.fullName || `${response.data.user.firstName} ${response.data.user.lastName}`,
-          email: response.data.user.email,
-        }
-        onLogin(user)
-      } else {
-        setError(response.error || "Login failed. Please check your credentials.")
+      const user = {
+        id: response.user.id,
+        name: response.user.fullName || `${response.user.firstName} ${response.user.lastName}`,
+        email: response.user.email,
       }
-    } catch (err) {
+      onLogin(user)
+    } catch (err: any) {
       console.error("Login error:", err)
-      setError("An unexpected error occurred. Please try again.")
+      const errorMessage = err.response?.data?.message || err.message || "Login failed. Please check your credentials."
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

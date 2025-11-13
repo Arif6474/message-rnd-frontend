@@ -1,6 +1,8 @@
 import { io } from "socket.io-client";
 
 // Initialize the Socket.IO connection
-const socket = io("http://localhost:5001");  // Replace with your backend URL
+// Use environment variable for backend URL
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const socket = io(SOCKET_URL);
 
 export default socket;

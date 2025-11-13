@@ -5,7 +5,7 @@ import ProjectList from "@/components/project-list"
 import ProjectDetail from "@/components/project-detail"
 import ChatSection from "@/components/chat-section"
 import { Button } from "@/components/ui/button"
-import axios from "axios"
+import { apiService } from "@/lib/api-service"
 
 interface DashboardProps {
   user: { id: string; name: string; email: string }
@@ -69,13 +69,24 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [selectedProject, setSelectedProject] = useState<Project>(MOCK_PROJECTS[0])
   console.log(projects)
   
+  const handleLogout = async () => {
+    try {
+      await apiService.auth.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      onLogout();
+    }
+  };
 
   useEffect(() => {
     const fetchProjects = async () => {
-      const response = await axios.get("http://localhost:5001/api/v1/projects",
-        
-      );
-      setProjects(response.data);
+      try {
+        const response = await apiService.project.getProjects();
+        setProjects(response.projects || []);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
     };
     fetchProjects();
   }, []);
@@ -95,7 +106,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               <p className="text-sm font-medium text-foreground">{user.name}</p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
-            <Button variant="outline" onClick={onLogout}>
+            <Button variant="outline" onClick={handleLogout}>
               Sign Out
             </Button>
           </div>
