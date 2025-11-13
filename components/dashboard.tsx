@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import {  useEffect, useState } from "react"
 import ProjectList from "@/components/project-list"
 import ProjectDetail from "@/components/project-detail"
 import ChatSection from "@/components/chat-section"
 import { Button } from "@/components/ui/button"
+import axios from "axios"
 
 interface DashboardProps {
   user: { id: string; name: string; email: string }
@@ -63,7 +64,22 @@ const MOCK_USERS = [
 ]
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
+
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project>(MOCK_PROJECTS[0])
+  console.log(projects)
+  
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const response = await axios.get("http://localhost:5001/api/v1/projects",
+        
+      );
+      setProjects(response.data);
+    };
+    fetchProjects();
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-background">
