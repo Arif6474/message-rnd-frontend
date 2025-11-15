@@ -3,13 +3,10 @@
 import { Card } from "@/components/ui/card"
 
 interface Project {
-  id: string
+  _id: string
   name: string
   description: string
-  status: "active" | "completed" | "pending"
-  lead: string
-  members: string[]
-  createdAt: string
+
 }
 
 interface ProjectDetailProps {
@@ -28,12 +25,10 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
       {/* Header */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
-          <span className={`text-sm px-3 py-1 rounded-full font-medium ${statusColors[project.status]}`}>
-            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-          </span>
+          <h1 className="text-3xl font-bold text-foreground">{project?.name}</h1>
+       
         </div>
-        <p className="text-muted-foreground text-lg">{project.description}</p>
+        <p className="text-muted-foreground text-lg">{project?.description}</p>
       </div>
 
       {/* Project Info */}
@@ -41,12 +36,9 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-muted-foreground uppercase font-semibold">Project Lead</p>
-            <p className="text-foreground font-medium mt-1">{project.lead}</p>
+
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground uppercase font-semibold">Created</p>
-            <p className="text-foreground font-medium mt-1">{new Date(project.createdAt).toLocaleDateString()}</p>
-          </div>
+
         </div>
       </Card>
 
@@ -54,14 +46,7 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-3">Team Members</h2>
         <div className="space-y-2">
-          {project.members.map((member, idx) => (
-            <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-primary">{member.charAt(0).toUpperCase()}</span>
-              </div>
-              <span className="text-foreground font-medium text-sm">{member}</span>
-            </div>
-          ))}
+       
         </div>
       </div>
 

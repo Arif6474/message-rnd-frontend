@@ -1,166 +1,188 @@
-"use client"
+"use client";
 
-import type React from "react"
+import React, { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import socket from "@/socket";
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
-
+// Types
 interface User {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface Message {
-  id: string
-  author: string
-  content: string
-  mentions: string[]
-  timestamp: string
+  _id: string;
+  user: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  content: string;
+  createdAt: string;
+
+}
+
+interface ProjectMember {
+  user: User;
 }
 
 interface ChatSectionProps {
-  projectId: string
-  project: { id: string; name: string; members: string[] }
-  currentUser: { id: string; name: string; email: string }
-  allUsers: User[]
+  projectId: string;
+  project: { _id: string; name: string };
+  currentUser: { id: string; name: string; email: string };
+  allUsers?: ProjectMember[];
 }
 
-export default function ChatSection({ projectId, project, currentUser, allUsers }: ChatSectionProps) {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const storageKey = `project-chat-${projectId}`
-    const stored = localStorage.getItem(storageKey)
-    if (stored) {
-      return JSON.parse(stored)
-    }
-    // Default messages for new projects
-    return [
-      {
-        id: "1",
-        author: "Sarah Johnson",
-        content: "Great progress on the design today!",
-        mentions: [],
-        timestamp: "10:30 AM",
-      },
-      {
-        id: "2",
-        author: "Mike Chen",
-        content: "@Sarah Johnson Let's review it in the afternoon standup",
-        mentions: ["Sarah Johnson"],
-        timestamp: "10:35 AM",
-      },
-    ]
-  })
+export default function ChatSection({
+  projectId,
+  project,
+  currentUser,
+  allUsers,
+}: ChatSectionProps) {
+  const [message, setMessage] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [notification, setNotification] = useState<string | null>(null);
+  const [showMentions, setShowMentions] = useState<boolean>(false);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [mentionSearch, setMentionSearch] = useState<string>("");
+console.log(messages)
 
-  const [input, setInput] = useState("")
-  const [showMentions, setShowMentions] = useState(false)
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
-  const [mentionSearch, setMentionSearch] = useState("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    socket.emit("joinProject", projectId, currentUser.id);
+  
+    // ✅ Receive full history when joining project
+    socket.on("projectMessages", (msgs: Message[]) => {
+      setMessages(msgs);
+    });
+  
+    // Real-time new messages
+    socket.on("newMessage", (data: Message) => {
+      setMessages((prev) => [...prev, data]);
+    });
+  
+    socket.on("mentionNotification", (data: { message: string }) => {
+      setNotification(data.message);
+      alert(data.message);
+    });
+  
+    return () => {
+      socket.off("projectMessages");
+      socket.off("newMessage");
+      socket.off("mentionNotification");
+    };
+  }, [projectId, currentUser.id]);
+  
 
-  useEffect(() => {
-    const storageKey = `project-chat-${projectId}`
-    localStorage.setItem(storageKey, JSON.stringify(messages))
-  }, [messages, projectId])
+  useEffect(() => scrollToBottom(), [messages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setInput(value)
+    const value = e.target.value;
+    setMessage(value);
 
-    const lastAtIndex = value.lastIndexOf("@")
+    const lastAtIndex = value.lastIndexOf("@");
     if (lastAtIndex !== -1) {
-      const afterAt = value.substring(lastAtIndex + 1)
+      const afterAt = value.substring(lastAtIndex + 1);
       if (!afterAt.includes(" ")) {
-        setMentionSearch(afterAt)
-        const filtered = allUsers.filter((user) => user.name.toLowerCase().includes(afterAt.toLowerCase()))
-        setFilteredUsers(filtered)
-        setShowMentions(true)
+        setMentionSearch(afterAt);
+        const filtered = allUsers
+          ? allUsers.filter((user) =>
+              user?.user?.name.toLowerCase().includes(afterAt.toLowerCase())
+            )
+          : [];
+        setFilteredUsers(filtered);
+        setShowMentions(true);
       } else {
-        setShowMentions(false)
+        setShowMentions(false);
       }
     } else {
-      setShowMentions(false)
+      setShowMentions(false);
     }
-  }
+  };
 
   const handleSelectMention = (user: User) => {
-    const lastAtIndex = input.lastIndexOf("@")
-    const newInput = input.substring(0, lastAtIndex) + "@" + user.name + " "
-    setInput(newInput)
-    setShowMentions(false)
-    setMentionSearch("")
-  }
+    const lastAtIndex = message.lastIndexOf("@");
+    const newMessage = message.substring(0, lastAtIndex) + "@" + user.name + " ";
+    setMessage(newMessage);
+    setShowMentions(false);
+    setMentionSearch("");
+  };
 
   const handleSendMessage = () => {
-    if (!input.trim()) return
+    if (!message.trim()) return;
 
-    const mentionedUsers = allUsers.filter((user) => input.includes("@" + user.name)).map((user) => user.name)
+    socket.emit("sendMessage", {
+      projectId,
+      message,
+      userId: currentUser.id,
+    });
 
-    const newMessage: Message = {
-      id: Math.random().toString(36).substr(2, 9),
-      author: currentUser.name,
-      content: input,
-      mentions: mentionedUsers,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    }
+    // Add optimistic message locally (optional)
+    // setMessages((prev) => [
+    //   ...prev,
+    //   {
+    //     _id: Math.random().toString(36).substr(2, 9),
+    //     author: currentUser.name,
+    //     content: message,
+    //     mentions: [],
+    //     timestamp: new Date().toISOString(),
+    //   },
+    // ]);
 
-    setMessages([...messages, newMessage])
-    setInput("")
-    setShowMentions(false)
-  }
-
-  const uniqueParticipants = new Set(messages.map((m) => m.author))
+    setMessage(""); // clear after send
+  };
 
   return (
     <div className="flex flex-col h-full bg-background/50">
-      {/* Chat Header */}
+      {/* Header */}
       <div className="p-4 border-b border-border bg-card sticky top-0">
-        <h2 className="font-semibold text-foreground">Project Chat</h2>
-        <p className="text-xs text-muted-foreground mt-1">{uniqueParticipants.size} participants</p>
+        <h2 className="font-semibold text-foreground">{project?.name}</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          {allUsers?.length || 0} participants
+        </p>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div key={message.id} className="space-y-1">
+        {messages.map((msg) => (
+          <div key={msg._id} className="space-y-1">
             <div className="flex items-baseline gap-2">
-              <span className="font-semibold text-sm text-foreground">{message.author}</span>
-              <span className="text-xs text-muted-foreground">{message.timestamp}</span>
+              <span className="font-semibold text-sm text-foreground">
+                {msg?.user?.firstName} {msg?.user?.lastName}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(msg?.createdAt).toLocaleTimeString()}
+              </span>
             </div>
-            <p className="text-sm text-foreground pl-0 break-words">
-              {message.content.split(/(@\w+)/g).map((part, idx) => {
-                if (part.startsWith("@")) {
-                  return (
-                    <span key={idx} className="text-primary font-medium">
-                      {part}
-                    </span>
-                  )
-                }
-                return part
-              })}
+            <p className="text-sm text-foreground break-words">
+              {msg?.content?.split(/(@\w+)/g).map((part, idx) =>
+                part.startsWith("@") ? (
+                  <span key={idx} className="text-primary font-medium">
+                    {part}
+                  </span>
+                ) : (
+                  part
+                )
+              )}
             </p>
-            {message.mentions.length > 0 && (
-              <p className="text-xs text-muted-foreground">Mentioned: {message.mentions.join(", ")}</p>
-            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
+      {/* Input */}
       <div className="p-4 border-t border-border bg-card">
         <div className="relative">
           {showMentions && filteredUsers.length > 0 && (
-            <Card className="absolute bottom-full left-0 right-0 mb-2 max-h-40 overflow-y-auto">
+            <Card className="absolute bottom-full left-0 right-0 mb-2 max-h-40 overflow-y-auto z-50">
               {filteredUsers.map((user) => (
                 <button
                   key={user.id}
@@ -172,14 +194,15 @@ export default function ChatSection({ projectId, project, currentUser, allUsers 
               ))}
             </Card>
           )}
+
           <div className="flex gap-2">
             <Input
-              value={input}
+              value={message}
               onChange={handleInputChange}
               onKeyPress={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSendMessage()
+                  e.preventDefault();
+                  handleSendMessage();
                 }
               }}
               placeholder="Type @ to mention someone..."
@@ -192,5 +215,5 @@ export default function ChatSection({ projectId, project, currentUser, allUsers 
         </div>
       </div>
     </div>
-  )
+  );
 }

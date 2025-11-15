@@ -28,13 +28,15 @@ export interface LoginResponse {
 }
 
 export interface Project {
-  id: string;
+  _id: string;
   name: string;
   description: string;
-  status: "active" | "completed" | "pending";
-  lead: string;
-  members: string[];
-  createdAt: string;
+
+}
+export interface ProjectMember {
+  _id: string;
+  user: User;
+  project: Project;
 }
 
 // Auth Service - Uses Public Axios
@@ -42,26 +44,26 @@ export const authService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     const response = await publicAxios.post('/auth/login', credentials);
     const data = response.data.data || response.data;
-    
+
     // Store access token
     if (data.accessToken) {
       localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('currentUser', JSON.stringify(data.user));
     }
-    
+
     return data;
   },
 
   register: async (data: RegisterRequest): Promise<LoginResponse> => {
     const response = await publicAxios.post('/auth/register', data);
     const responseData = response.data.data || response.data;
-    
+
     // Store access token
     if (responseData.accessToken) {
       localStorage.setItem('accessToken', responseData.accessToken);
       localStorage.setItem('currentUser', JSON.stringify(responseData.user));
     }
-    
+
     return responseData;
   },
 
@@ -78,12 +80,12 @@ export const authService = {
   refreshToken: async (): Promise<{ accessToken: string }> => {
     const response = await publicAxios.post('/auth/refresh');
     const data = response.data.data || response.data;
-    
+
     // Update access token
     if (data.accessToken) {
       localStorage.setItem('accessToken', data.accessToken);
     }
-    
+
     return data;
   },
 };
@@ -133,11 +135,18 @@ export const projectService = {
   },
 };
 
+const projectMemberService = {
+  getProjectMembers: async (id: string): Promise<ProjectMember[]> => {
+    const response = await privateAxios.get(`/projectMembers/project/${id}`);
+    return response.data.data || response.data;
+  },
+}
 // Export all services
 export const apiService = {
   auth: authService,
   user: userService,
   project: projectService,
+  projectMember: projectMemberService,
 };
 
 export default apiService;
