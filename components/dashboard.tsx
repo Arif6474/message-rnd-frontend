@@ -5,7 +5,7 @@ import ProjectList from "@/components/project-list"
 import ProjectDetail from "@/components/project-detail"
 import ChatSection from "@/components/chat-section"
 import { Button } from "@/components/ui/button"
-import { apiService } from "@/lib/api-service"
+import { ProjectMember, apiService } from "@/lib/api-service"
 
 interface DashboardProps {
   user: { id: string; name: string; email: string }
@@ -13,42 +13,30 @@ interface DashboardProps {
 }
 
 interface Project {
-  id: string
+  _id: string
   name: string
   description: string
-  status: "active" | "completed" | "pending"
-  lead: string
-  members: string[]
-  createdAt: string
+
 }
 
 const MOCK_PROJECTS: Project[] = [
   {
-    id: "1",
+    _id: "1",
     name: "Website Redesign",
     description: "Complete redesign of the company website with modern UI/UX",
-    status: "active",
-    lead: "Sarah Johnson",
-    members: ["Sarah Johnson", "Mike Chen", "Lisa Park"],
-    createdAt: "2024-01-15",
+
   },
   {
-    id: "2",
+    _id: "2",
     name: "Mobile App Development",
-    description: "Build cross-platform mobile application for iOS and Android",
-    status: "active",
-    lead: "James Wilson",
-    members: ["James Wilson", "Emily Davis", "Robert Brown"],
-    createdAt: "2024-02-20",
+    description: "Build cross-platform mobile application for iOS and Andro_id",
+
   },
   {
-    id: "3",
+    _id: "3",
     name: "API Integration",
     description: "Integrate third-party payment gateway and analytics",
-    status: "pending",
-    lead: "Alex Martinez",
-    members: ["Alex Martinez", "Tom Anderson"],
-    createdAt: "2024-03-10",
+
   },
 ]
 
@@ -66,8 +54,11 @@ const MOCK_USERS = [
 export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project>(MOCK_PROJECTS[0])
-  console.log(projects)
+  const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
+
+  
+  const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+
   
   const handleLogout = async () => {
     try {
@@ -83,13 +74,31 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const fetchProjects = async () => {
       try {
         const response = await apiService.project.getProjects();
-        setProjects(response.projects || []);
+        
+        setProjects(response.projects || [])
       } catch (error) {
         console.error("Error fetching projects:", error);
       }
     };
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    const fetchProjectMembers = async () => {
+      try {
+        const response = await apiService.projectMember.getProjectMembers(selectedProject?._id);
+       
+        setProjectMembers(response || [])
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
+    };
+   if (selectedProject) {
+
+    
+    fetchProjectMembers();
+  }
+  }, [selectedProject]);
 
 
   return (
@@ -117,7 +126,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       <div className="flex h-[calc(100vh-80px)]">
         {/* Projects Sidebar */}
         <div className="w-full md:w-[30%] border-r border-border bg-secondary/30 overflow-y-auto">
-          <ProjectList projects={MOCK_PROJECTS} selectedId={selectedProject.id} onSelect={setSelectedProject} />
+          <ProjectList projects={projects} selectedId={selectedProject?._id} onSelect={setSelectedProject} />
         </div>
 
         {/* Two Column Layout: Project Details (60%) and Chat (40%) */}
@@ -130,10 +139,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           {/* Chat Section - Pass projectId for project-based chat storage */}
           <div className="w-2/5 overflow-y-auto">
             <ChatSection
-              projectId={selectedProject.id}
+              projectId={selectedProject?._id}
               project={selectedProject}
               currentUser={user}
-              allUsers={MOCK_USERS}
+              allUsers={projectMembers}
             />
           </div>
         </div>
