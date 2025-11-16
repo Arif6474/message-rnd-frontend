@@ -48,6 +48,7 @@ export default function ChatSection({
   const [showMentions, setShowMentions] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<ProjectMember[]>([]);
   const [mentionSearch, setMentionSearch] = useState("");
+  const [notifications, setNotifications] = useState<string[]>([]); // Store notifications
 
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -69,12 +70,19 @@ export default function ChatSection({
     }
   };
 
-  // ------------- INITIAL LOAD -------------
+  // ------------- INITIAL LOAD & HANDLING PROJECT CHANGE -------------
   useEffect(() => {
+    // Reset messages when projectId changes
+    setMessages([]);
+    setSkip(0);
+    setHasMore(true);
+
+    // Fetch new messages for the new project
     fetchMessages();
+
     socket.emit("joinProject", projectId, currentUser.id);
 
-    // Fetch project members from the backend
+    // Fetch project members when the project changes
     socket.on("projectMembers", (members: ProjectMember[]) => {
       setProjectMembers(members);
     });
@@ -89,15 +97,19 @@ export default function ChatSection({
       scrollToBottom();
     });
 
+    socket.on("mentionNotification", (data: { message: string }) => {
+      setNotifications((prevNotifications) => [...prevNotifications, data.message]);
+    });
+
     return () => {
       socket.off("projectMembers");
       socket.off("projectMessages");
       socket.off("newMessage");
+      socket.off("mentionNotification");
     };
-  }, [projectId]);
+  }, [projectId]); // Effect will re-run when projectId changes
 
-  const scrollToBottom = () =>
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = () => endRef.current?.scrollIntoView({ behavior: "smooth" });
 
   // ------------- INFINITE SCROLL HANDLER -------------
   const handleScroll = () => {
@@ -175,7 +187,6 @@ export default function ChatSection({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat messages */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
@@ -208,7 +219,7 @@ export default function ChatSection({
 
       {/* Mention search */}
       {showMentions && filteredUsers.length > 0 && (
-        <div className=" bottom-full left-0 right-0 mb-2 max-h-40 overflow-y-auto z-50">
+        <div className="bottom-full left-0 right-0 mb-2 max-h-40 overflow-y-auto z-50">
           {filteredUsers.map((user) => (
             <button
               key={user._id}
@@ -236,6 +247,15 @@ export default function ChatSection({
         />
         <Button onClick={handleSend}>Send</Button>
       </div>
+
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="absolute top-0 right-0 p-2 bg-yellow-500 text-white">
+          {notifications.map((notif, idx) => (
+            <p key={idx}>{notif}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
