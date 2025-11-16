@@ -1,7 +1,9 @@
 import { io, Socket } from 'socket.io-client';
 import type { Message, Notification, ProjectMember, TypingIndicator } from '@/types/message';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// Socket.IO connects to the root URL, not the API path
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const SOCKET_URL = API_URL.replace('/api/v1', ''); // Remove /api/v1 for socket connection
 
 type SocketEventCallback = (...args: any[]) => void;
 
@@ -32,15 +34,26 @@ class SocketService {
       return;
     }
 
-    this.socket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: this.reconnectDelay,
-      reconnectionAttempts: this.maxReconnectAttempts,
-      auth: accessToken ? { token: accessToken } : undefined,
-    });
+    // Don't connect if no token provided
+    if (!accessToken) {
+      console.warn('No access token provided, skipping socket connection');
+      return;
+    }
 
-    this.setupEventListeners();
+    try {
+      this.socket = io(SOCKET_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: this.reconnectDelay,
+        reconnectionAttempts: this.maxReconnectAttempts,
+        auth: { token: accessToken },
+        autoConnect: true,
+      });
+
+      this.setupEventListeners();
+    } catch (error) {
+      console.error('Failed to initialize socket:', error);
+    }
   }
 
   /**
@@ -64,8 +77,13 @@ class SocketService {
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('Socket connection error:', error.message || error);
       this.reconnectAttempts++;
+      
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.error('Max reconnection attempts reached. Stopping reconnection.');
+        this.disconnect();
+      }
     });
 
     this.socket.on('error', (error) => {
@@ -85,7 +103,8 @@ class SocketService {
     this.currentProjectId = projectId;
     this.currentUserId = userId;
 
-    this.socket.emit('joinProject', { projectId, userId });
+    // Backend expects two separate parameters, not an object
+    this.socket.emit('joinProject', projectId, userId);
     console.log(`📢 Joined project: ${projectId}`);
   }
 
@@ -100,13 +119,18 @@ class SocketService {
   /**
    * Send a message
    */
-  public sendMessage(projectId: string, content: string): void {
+  public sendMessage(projectId: string, content: string, userId: string): void {
     if (!this.socket?.connected) {
       console.error('Socket not connected');
       return;
     }
 
-    this.socket.emit('sendMessage', { projectId, content });
+    // Backend expects { projectId, message, userId }
+    this.socket.emit('sendMessage', { 
+      projectId, 
+      message: content,  // Backend uses 'message' not 'content'
+      userId 
+    });
   }
 
   /**

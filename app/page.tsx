@@ -8,8 +8,10 @@ import { socketService } from "@/lib/socket.service"
 export default function Home() {
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const savedUser = localStorage.getItem("currentUser")
     if (savedUser) {
       setUser(JSON.parse(savedUser))
@@ -51,7 +53,8 @@ export default function Home() {
     }
   }
 
-  if (loading) {
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-foreground">Loading...</div>

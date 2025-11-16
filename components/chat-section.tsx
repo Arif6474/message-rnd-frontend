@@ -26,6 +26,8 @@ export default function ChatSection({ projectId, currentUser }: ChatSectionProps
     markAsRead,
   } = useMessageStore()
 
+  console.log('💬 ChatSection rendered with projectId:', projectId, 'currentUser:', currentUser.id);
+
   const [input, setInput] = useState("")
   const [showMentions, setShowMentions] = useState(false)
   const [filteredUsers, setFilteredUsers] = useState<Array<{ id: string; name: string }>>([])
