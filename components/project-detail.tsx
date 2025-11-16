@@ -23,17 +23,21 @@ const statusColors = {
 }
 
 export default function ProjectDetail({ project }: ProjectDetailProps) {
+  // Safely handle status with fallback
+  const status = project.status || 'pending';
+  const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+  
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
-          <span className={`text-sm px-3 py-1 rounded-full font-medium ${statusColors[project.status]}`}>
-            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+          <span className={`text-sm px-3 py-1 rounded-full font-medium ${statusColors[status]}`}>
+            {statusText}
           </span>
         </div>
-        <p className="text-muted-foreground text-lg">{project.description}</p>
+        <p className="text-muted-foreground text-lg">{project.description || 'No description'}</p>
       </div>
 
       {/* Project Info */}
@@ -54,12 +58,14 @@ export default function ProjectDetail({ project }: ProjectDetailProps) {
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-3">Team Members</h2>
         <div className="space-y-2">
-          {project.members.map((member, idx) => (
+          {project.members?.map((member, idx) => (
             <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30">
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-primary">{member.charAt(0).toUpperCase()}</span>
+                <span className="text-xs font-bold text-primary">
+                  {member && typeof member === 'string' ? member.charAt(0).toUpperCase() : '?'}
+                </span>
               </div>
-              <span className="text-foreground font-medium text-sm">{member}</span>
+              <span className="text-foreground font-medium text-sm">{member || 'Unknown'}</span>
             </div>
           ))}
         </div>

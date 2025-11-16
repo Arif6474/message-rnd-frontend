@@ -25,54 +25,38 @@ interface Project {
   createdAt: string
 }
 
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: "1",
-    name: "Website Redesign",
-    description: "Complete redesign of the company website with modern UI/UX",
-    status: "active",
-    lead: "Sarah Johnson",
-    members: ["Sarah Johnson", "Mike Chen", "Lisa Park"],
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    name: "Mobile App Development",
-    description: "Build cross-platform mobile application for iOS and Android",
-    status: "active",
-    lead: "James Wilson",
-    members: ["James Wilson", "Emily Davis", "Robert Brown"],
-    createdAt: "2024-02-20",
-  },
-  {
-    id: "3",
-    name: "API Integration",
-    description: "Integrate third-party payment gateway and analytics",
-    status: "pending",
-    lead: "Alex Martinez",
-    members: ["Alex Martinez", "Tom Anderson"],
-    createdAt: "2024-03-10",
-  },
-]
-
 export default function Dashboard({ user, onLogout }: DashboardProps) {
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS)
-  const [selectedProject, setSelectedProject] = useState<Project | null>(MOCK_PROJECTS[0])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   // Fetch real projects from API
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        setLoading(true)
+        console.log('🔍 Fetching projects from API...');
         const response = await apiService.project.getProjects()
+        console.log('📁 API Response:', response);
+        
         if (response.projects && response.projects.length > 0) {
+          console.log(`✅ Got ${response.projects.length} projects from API`);
+          console.log('First project:', response.projects[0]);
           setProjects(response.projects)
           setSelectedProject(response.projects[0])
+        } else {
+          console.warn('⚠️ No projects returned from API');
+          setProjects([])
+          setSelectedProject(null)
         }
       } catch (error) {
-        console.error("Error fetching projects:", error)
-        // Fall back to mock data
+        console.error("❌ Error fetching projects:", error)
+        setProjects([])
+        setSelectedProject(null)
+      } finally {
+        setLoading(false)
       }
     }
     fetchProjects()
@@ -140,7 +124,25 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
-          {selectedProject ? (
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading projects...</p>
+              </div>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <h3 className="text-2xl font-semibold text-muted-foreground mb-2">
+                  No Projects Found
+                </h3>
+                <p className="text-muted-foreground">
+                  You don't have access to any projects yet.
+                </p>
+              </div>
+            </div>
+          ) : selectedProject ? (
             <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
               {/* Project Details */}
               <div className="overflow-hidden">

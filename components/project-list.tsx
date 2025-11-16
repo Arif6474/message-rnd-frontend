@@ -28,26 +28,32 @@ export default function ProjectList({ projects, selectedId, onSelect }: ProjectL
   return (
     <div className="p-4 space-y-2">
       <h2 className="text-lg font-semibold text-foreground mb-4 px-2">Projects</h2>
-      {projects.map((project) => (
-        <Card
-          key={project.id}
-          className={`p-4 cursor-pointer transition-all ${
-            selectedId === project.id ? "bg-primary/10 border-primary" : "hover:bg-secondary/50"
-          }`}
-          onClick={() => onSelect(project)}
-        >
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold text-foreground text-sm">{project.name}</h3>
-            <span className={`text-xs px-2 py-1 rounded-full ${statusColors[project.status]}`}>
-              {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{project.description}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>Lead: {project.lead}</span>
-          </div>
-        </Card>
-      ))}
+      {projects.map((project) => {
+        // Safely handle status with fallback
+        const status = project.status || 'pending';
+        const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+        
+        return (
+          <Card
+            key={project.id}
+            className={`p-4 cursor-pointer transition-all ${
+              selectedId === project.id ? "bg-primary/10 border-primary" : "hover:bg-secondary/50"
+            }`}
+            onClick={() => onSelect(project)}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="font-semibold text-foreground text-sm">{project.name}</h3>
+              <span className={`text-xs px-2 py-1 rounded-full ${statusColors[status]}`}>
+                {statusText}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{project.description || 'No description'}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Lead: {project.lead || 'Unassigned'}</span>
+            </div>
+          </Card>
+        );
+      })}
     </div>
   )
 }

@@ -140,7 +140,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       get().addMessage(optimisticMessage);
       
       // Send via socket (server will broadcast back with real ID)
-      socketService.sendMessage(projectId, content);
+      socketService.sendMessage(projectId, content, userId);
     } catch (error: any) {
       console.error('Failed to send message:', error);
       set({ error: error.message || 'Failed to send message' });
@@ -179,21 +179,27 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   initializeSocket: (projectId, userId) => {
     const socket = socketService;
     
+    console.log('🔌 Initializing socket for project:', projectId, 'user:', userId);
+    
     // Join project
     socket.joinProject(projectId, userId);
     
     // Listen for initial messages
     socket.onProjectMessages((messages) => {
+      console.log('📨 Received projectMessages:', messages.length, 'messages');
       set({ messages: messages.reverse() }); // Oldest first
     });
     
     // Listen for project members
     socket.onProjectMembers((members) => {
+      console.log('👥 Received projectMembers:', members.length, 'members');
+      console.log('Members data:', members);
       set({ projectMembers: members });
     });
     
     // Listen for new messages
     socket.onNewMessage((message) => {
+      console.log('💬 Received newMessage:', message);
       get().addMessage(message);
     });
     
