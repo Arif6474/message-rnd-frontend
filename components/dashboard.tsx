@@ -56,7 +56,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
 
-  
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
 
   
@@ -142,6 +142,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               projectId={selectedProject?._id}
               project={selectedProject}
               currentUser={user}
+              apiBaseUrl={apiBaseUrl}
               allUsers={projectMembers}
             />
           </div>
