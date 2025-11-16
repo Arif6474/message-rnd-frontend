@@ -49,6 +49,7 @@ export default function ChatSection({
   const [filteredUsers, setFilteredUsers] = useState<ProjectMember[]>([]);
   const [mentionSearch, setMentionSearch] = useState("");
   const [notifications, setNotifications] = useState<string[]>([]); // Store notifications
+console.log({notifications})
 
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -202,7 +203,7 @@ export default function ChatSection({
           <div key={msg._id}>
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-gray-800">
-                {msg.user.firstName} {msg.user.lastName}
+                {msg?.user?.firstName} {msg?.user?.lastName}
               </p>
               <p className="text-xs text-gray-500">
                 {new Date(msg.createdAt).toLocaleTimeString([], {
