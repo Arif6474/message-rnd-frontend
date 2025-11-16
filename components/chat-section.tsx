@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import socket from "@/socket";
 
 interface User {
-  _id: string; // Use MongoDB ObjectId
+  _id: string; // MongoDB ObjectId
   firstName: string;
   lastName: string;
   email: string;
+  username: string; // Add username for mention purposes
 }
 
 interface ProjectMember {
@@ -28,7 +29,7 @@ interface Message {
 interface ChatSectionProps {
   projectId: string;
   apiBaseUrl: string;
-  currentUser: { id: string; firstName: string; lastName: string; email: string };
+  currentUser: { id: string; firstName: string; lastName: string; email: string; username: string };
 }
 
 const PAGE_SIZE = 10;
@@ -50,8 +51,6 @@ export default function ChatSection({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
-console.log({projectMembers})
-console.log({filteredUsers})
 
   // ------------- FETCH MESSAGES (REST API) -------------
   const fetchMessages = async (extraSkip = 0) => {
@@ -125,6 +124,7 @@ console.log({filteredUsers})
         firstName: currentUser.firstName,
         lastName: currentUser.lastName,
         email: currentUser.email,
+        username: currentUser.username, // Include username in the message
       },
       content: message,
       createdAt: new Date().toISOString(),
@@ -136,6 +136,7 @@ console.log({filteredUsers})
       projectId,
       message: message.trim(),
       userId: currentUser.id,
+      username: currentUser.username, // Pass the username to the backend
     });
 
     setMessage("");
@@ -152,7 +153,7 @@ console.log({filteredUsers})
       if (!afterAt.includes(" ")) {
         setMentionSearch(afterAt);
         const filtered = projectMembers.filter((user) =>
-          user.user.firstName.toLowerCase().includes(afterAt.toLowerCase())
+          user.user.username.toLowerCase().includes(afterAt.toLowerCase())
         );
         setFilteredUsers(filtered);
         setShowMentions(true);
@@ -167,7 +168,7 @@ console.log({filteredUsers})
   const handleSelectMention = (user: User) => {
     const lastAtIndex = message.lastIndexOf("@");
     const newMessage =
-      message.substring(0, lastAtIndex) + "@" + user.firstName + " ";
+      message.substring(0, lastAtIndex) + "@" + user.username + " "; // Use username for mention
     setMessage(newMessage);
     setShowMentions(false);
   };
@@ -214,7 +215,7 @@ console.log({filteredUsers})
               onClick={() => handleSelectMention(user.user)}
               className="w-full text-left px-3 py-2 hover:bg-secondary/50 text-sm text-foreground border-b border-border last:border-0"
             >
-              @{user.user.firstName}
+              @{user.user.username}
             </button>
           ))}
         </div>
