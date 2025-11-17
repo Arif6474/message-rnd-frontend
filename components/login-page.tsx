@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { apiService } from "@/lib/api-service"
 
+
 interface LoginPageProps {
-  onLogin: (user: { id: string; name: string; email: string }) => void
+  onLogin: (user: { id: string; firstName: string; lastName: string; email: string }) => void
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
@@ -35,7 +36,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
       const user = {
         id: response.user.id,
-        name: response.user.fullName || `${response.user.firstName} ${response.user.lastName}`,
+        // name: response.user.fullName || `${response.user.firstName} ${response.user.lastName}`,
+        firstName: response.user.firstName,
+        lastName: `${response.user.lastName}`,
         email: response.user.email,
       }
       onLogin(user)

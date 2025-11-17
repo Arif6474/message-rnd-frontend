@@ -5,7 +5,7 @@ import LoginPage from "@/components/login-page"
 import Dashboard from "@/components/dashboard"
 
 export default function Home() {
-  const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
+  const [user, setUser] = useState<{ id: string; firstName: string; lastName: string; email: string } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function Home() {
     setLoading(false)
   }, [])
 
-  const handleLogin = (userData: { id: string; name: string; email: string }) => {
+  const handleLogin = (userData: { id: string; firstName: string; lastName: string; email: string }) => {
     setUser(userData)
     localStorage.setItem("currentUser", JSON.stringify(userData))
   }

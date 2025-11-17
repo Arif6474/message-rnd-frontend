@@ -30,6 +30,8 @@ interface ChatSectionProps {
   projectId: string;
   apiBaseUrl: string;
   currentUser: { id: string; firstName: string; lastName: string; email: string; username: string };
+  notifications: string[];
+  setNotifications: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const PAGE_SIZE = 10;
@@ -38,6 +40,8 @@ export default function ChatSection({
   projectId,
   apiBaseUrl,
   currentUser,
+  notifications,
+  setNotifications
 }: ChatSectionProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
@@ -48,8 +52,7 @@ export default function ChatSection({
   const [showMentions, setShowMentions] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<ProjectMember[]>([]);
   const [mentionSearch, setMentionSearch] = useState("");
-  const [notifications, setNotifications] = useState<string[]>([]); // Store notifications
-console.log({notifications})
+
 
   const containerRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -98,7 +101,9 @@ console.log({notifications})
       scrollToBottom();
     });
 
-    socket.on("mentionNotification", (data: { message: string }) => {
+    // Listen for mention notifications
+    socket.on("mentionNotification", (data) => {
+      console.log(data, 'mentionNotification');
       setNotifications((prevNotifications) => [...prevNotifications, data.message]);
     });
 
@@ -142,6 +147,8 @@ console.log({notifications})
       content: message,
       createdAt: new Date().toISOString(),
     };
+
+
     setMessages((prev) => [...prev, tempMsg]);
     scrollToBottom();
 
@@ -199,8 +206,8 @@ console.log({notifications})
           </p>
         )}
 
-        {messages.map((msg) => (
-          <div key={msg._id}>
+        {messages.map((msg, i) => (
+          <div key={i}>
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-gray-800">
                 {msg?.user?.firstName} {msg?.user?.lastName}
@@ -250,13 +257,13 @@ console.log({notifications})
       </div>
 
       {/* Notifications */}
-      {notifications.length > 0 && (
-        <div className="absolute top-0 right-0 p-2 bg-yellow-500 text-white">
+      {/* {notifications.length > 0 && (
+        <div className=" top-0 right-0 p-2 bg-yellow-500 text-white">
           {notifications.map((notif, idx) => (
             <p key={idx}>{notif}</p>
           ))}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

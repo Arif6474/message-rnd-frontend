@@ -1,6 +1,6 @@
 "use client"
 
-import {  useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import ProjectList from "@/components/project-list"
 import ProjectDetail from "@/components/project-detail"
 import ChatSection from "@/components/chat-section"
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ProjectMember, apiService } from "@/lib/api-service"
 
 interface DashboardProps {
-  user: { id: string; name: string; email: string }
+  user: { id: string; firstName: string; lastName: string; email: string }
   onLogout: () => void
 }
 
@@ -19,47 +19,18 @@ interface Project {
 
 }
 
-const MOCK_PROJECTS: Project[] = [
-  {
-    _id: "1",
-    name: "Website Redesign",
-    description: "Complete redesign of the company website with modern UI/UX",
-
-  },
-  {
-    _id: "2",
-    name: "Mobile App Development",
-    description: "Build cross-platform mobile application for iOS and Andro_id",
-
-  },
-  {
-    _id: "3",
-    name: "API Integration",
-    description: "Integrate third-party payment gateway and analytics",
-
-  },
-]
-
-const MOCK_USERS = [
-  { id: "1", name: "Sarah Johnson" },
-  { id: "2", name: "Mike Chen" },
-  { id: "3", name: "Lisa Park" },
-  { id: "4", name: "James Wilson" },
-  { id: "5", name: "Emily Davis" },
-  { id: "6", name: "Robert Brown" },
-  { id: "7", name: "Alex Martinez" },
-  { id: "8", name: "Tom Anderson" },
-]
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
 
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
+  const [notifications, setNotifications] = useState<string[]>([]);
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
 
-  
+
   const handleLogout = async () => {
     try {
       await apiService.auth.logout();
@@ -74,7 +45,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const fetchProjects = async () => {
       try {
         const response = await apiService.project.getProjects();
-        
+
         setProjects(response.projects || [])
       } catch (error) {
         console.error("Error fetching projects:", error);
@@ -87,17 +58,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const fetchProjectMembers = async () => {
       try {
         const response = await apiService.projectMember.getProjectMembers(selectedProject?._id);
-       
+
         setProjectMembers(response || [])
       } catch (error) {
         console.error("Error fetching projects:", error);
       }
     };
-   if (selectedProject) {
+    if (selectedProject) {
 
-    
-    fetchProjectMembers();
-  }
+
+      fetchProjectMembers();
+    }
   }, [selectedProject]);
 
 
@@ -108,11 +79,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         <div className="px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Project Management</h1>
-            <p className="text-sm text-muted-foreground mt-1">Welcome, {user.name}</p>
+            <p className="text-sm text-muted-foreground mt-1">Welcome, {user.firstName}</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm font-medium text-foreground">{user.name}</p>
+              <p className="text-sm font-medium text-foreground">{user.firstName}</p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
             <Button variant="outline" onClick={handleLogout}>
@@ -133,7 +104,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Project Details */}
           <div className="w-3/5 border-r border-border overflow-y-auto">
-            <ProjectDetail project={selectedProject} />
+            {/* <ProjectDetail project={selectedProject} /> */}
+            {notifications.length > 0 && (
+              <div className=" top-0 right-0 p-2 bg-yellow-500 text-white">
+                {notifications.map((notif, idx) => (
+                  <p key={idx}>{notif}</p>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Chat Section - Pass projectId for project-based chat storage */}
@@ -144,6 +122,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               currentUser={user}
               apiBaseUrl={apiBaseUrl}
               allUsers={projectMembers}
+              notifications={notifications}
+              setNotifications={setNotifications}
             />
           </div>
         </div>
