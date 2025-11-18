@@ -25,7 +25,8 @@ const urlBase64ToUint8Array = (base64String: string) => {
       });
   
       // Send subscription to your backend
-      await fetch('https://backend.comments-rnd.tdapsp.antopolis.xyz/api/v1/subscriptions/save-subscription', {
+      await fetch('/api/v1/subscriptions/save-subscription', {
+    //   await fetch('https://backend.comments-rnd.tdapsp.antopolis.xyz/api/v1/subscriptions/save-subscription', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
