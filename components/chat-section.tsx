@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import socket from "@/socket";
+import { subscribeUserToPush } from "./PushNotification";
 
 interface User {
   _id: string; // MongoDB ObjectId
@@ -185,6 +186,15 @@ export default function ChatSection({
     }
   };
 
+  useEffect(() => {
+    if (currentUser.id) {
+      console.log("currentUser.id", currentUser.id);
+      
+      subscribeUserToPush(currentUser.id);
+    }
+  }, [currentUser.id]);
+
+
   const handleSelectMention = (user: User) => {
     const lastAtIndex = message.lastIndexOf("@");
     const newMessage =
@@ -256,14 +266,6 @@ export default function ChatSection({
         <Button onClick={handleSend}>Send</Button>
       </div>
 
-      {/* Notifications */}
-      {/* {notifications.length > 0 && (
-        <div className=" top-0 right-0 p-2 bg-yellow-500 text-white">
-          {notifications.map((notif, idx) => (
-            <p key={idx}>{notif}</p>
-          ))}
-        </div>
-      )} */}
     </div>
   );
 }
