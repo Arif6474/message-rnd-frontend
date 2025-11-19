@@ -75,6 +75,54 @@ export default function ChatSection({
     }
   };
 
+  const showBrowserNotification = async (
+    message: string,
+    payload?: any
+  ) => {
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window)) {
+      console.warn("🔔 [Notifications] Browser does not support Notifications API");
+      return;
+    }
+    if (!("serviceWorker" in navigator)) {
+      console.warn("🔔 [Notifications] Service workers not supported");
+      return;
+    }
+
+    try {
+      let permission = Notification.permission;
+      if (permission === "default") {
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission !== "granted") {
+        console.warn("🔔 [Notifications] Notification permission not granted:", permission);
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const title = payload?.title || "You were mentioned!";
+      const options: NotificationOptions = {
+        body: message,
+        icon: payload?.icon || "/logo192.png",
+        badge: payload?.badge || "/badge.png",
+        data: {
+          ...payload,
+          url:
+            payload?.data?.url ||
+            `/projects/${payload?.projectId || projectId || ""}`,
+        },
+        tag: payload?.messageId || "mention",
+      };
+
+      console.log("🔔 [Notifications] Showing browser notification with options:", options);
+      await registration.showNotification(title, options);
+      console.log("🔔 [Notifications] ✅ Browser notification displayed");
+    } catch (error) {
+      console.error("🔔 [Notifications] Failed to display browser notification:", error);
+    }
+  };
+
   // ------------- GLOBAL NOTIFICATION LISTENER (works across all projects) -------------
   useEffect(() => {
     console.log("🔔 [Notifications] Setting up global mentionNotification listener");
@@ -125,6 +173,8 @@ export default function ChatSection({
           console.log("🔔 [Notifications] All notifications:", updated);
           return updated;
         });
+
+        void showBrowserNotification(notificationMessage, data);
       } else {
         console.warn("🔔 [Notifications] ⚠️ No notification message found in data:", data);
       }

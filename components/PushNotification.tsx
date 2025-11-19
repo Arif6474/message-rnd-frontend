@@ -20,6 +20,21 @@ const urlBase64ToUint8Array = (base64String: string) => {
         return;
       }
 
+      if (!("Notification" in window)) {
+        console.error("Notifications API not supported in this browser");
+        return;
+      }
+
+      let permission = Notification.permission;
+      if (permission === "default") {
+        permission = await Notification.requestPermission();
+      }
+
+      if (permission !== "granted") {
+        console.warn("Notification permission not granted. Skipping push subscription.");
+        return;
+      }
+
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
   
@@ -30,10 +45,15 @@ const urlBase64ToUint8Array = (base64String: string) => {
       }
       const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
   
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: convertedVapidKey,
-      });
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedVapidKey,
+        });
+      } else {
+        console.log("Existing push subscription found, reusing it.");
+      }
   
       // Get API base URL from environment variable
       // Handle both cases: env var with or without /api/v1
