@@ -27,6 +27,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [selectedProject, setSelectedProject] = useState<Project>(projects[0])
   const [notifications, setNotifications] = useState<string[]>([]);
 
+  // Log notifications state changes
+  useEffect(() => {
+    console.log("📋 [Dashboard] Notifications state updated:", notifications);
+    console.log("📋 [Dashboard] Notification count:", notifications.length);
+  }, [notifications]);
+
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
 
@@ -105,24 +111,36 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           {/* Project Details */}
           <div className="w-3/5 border-r border-border overflow-y-auto relative">
             {/* <ProjectDetail project={selectedProject} /> */}
-            {notifications.length > 0 && (
-              <div className="sticky top-0 z-50 p-4 bg-yellow-500 text-white shadow-lg">
+            {/* Debug: Always show notification count */}
+            <div className="p-2 text-xs text-gray-500">
+              Debug: {notifications.length} notification(s) in state
+            </div>
+            
+            {notifications.length > 0 ? (
+              <div className="sticky top-0 z-50 p-4 bg-yellow-500 text-white shadow-lg border-4 border-red-500">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Notifications</h3>
+                  <h3 className="font-semibold text-lg">🔔 Notifications ({notifications.length})</h3>
                   <button
-                    onClick={() => setNotifications([])}
-                    className="text-white hover:text-gray-200 font-bold"
+                    onClick={() => {
+                      console.log("📋 [Dashboard] Clearing notifications");
+                      setNotifications([]);
+                    }}
+                    className="text-white hover:text-gray-200 font-bold text-2xl px-2"
                   >
                     ×
                   </button>
                 </div>
                 <div className="space-y-2">
                   {notifications.map((notif, idx) => (
-                    <div key={idx} className="p-2 bg-yellow-600 rounded text-sm">
+                    <div key={idx} className="p-3 bg-yellow-600 rounded text-sm border border-yellow-700">
                       {notif}
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div className="p-4 text-gray-400 text-sm">
+                No notifications yet. Waiting for mentions...
               </div>
             )}
           </div>
