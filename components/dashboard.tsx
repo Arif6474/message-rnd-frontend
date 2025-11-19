@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ProjectMember, apiService } from "@/lib/api-service"
 
 interface DashboardProps {
-  user: { id: string; firstName: string; lastName: string; email: string }
+  user: { id: string; firstName: string; lastName: string; email: string; username?: string }
   onLogout: () => void
 }
 
@@ -103,13 +103,26 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         {/* Two Column Layout: Project Details (60%) and Chat (40%) */}
         <div className="flex flex-1 overflow-hidden">
           {/* Project Details */}
-          <div className="w-3/5 border-r border-border overflow-y-auto">
+          <div className="w-3/5 border-r border-border overflow-y-auto relative">
             {/* <ProjectDetail project={selectedProject} /> */}
             {notifications.length > 0 && (
-              <div className=" top-0 right-0 p-2 bg-yellow-500 text-white">
-                {notifications.map((notif, idx) => (
-                  <p key={idx}>{notif}</p>
-                ))}
+              <div className="sticky top-0 z-50 p-4 bg-yellow-500 text-white shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Notifications</h3>
+                  <button
+                    onClick={() => setNotifications([])}
+                    className="text-white hover:text-gray-200 font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {notifications.map((notif, idx) => (
+                    <div key={idx} className="p-2 bg-yellow-600 rounded text-sm">
+                      {notif}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -118,10 +131,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           <div className="w-2/5 overflow-y-auto">
             <ChatSection
               projectId={selectedProject?._id}
-              project={selectedProject}
               currentUser={user}
               apiBaseUrl={apiBaseUrl}
-              allUsers={projectMembers}
               notifications={notifications}
               setNotifications={setNotifications}
             />

@@ -30,7 +30,7 @@ interface Message {
 interface ChatSectionProps {
   projectId: string;
   apiBaseUrl: string;
-  currentUser: { id: string; firstName: string; lastName: string; email: string; username: string };
+  currentUser: { id: string; firstName: string; lastName: string; email: string; username?: string };
   notifications: string[];
   setNotifications: React.Dispatch<React.SetStateAction<string[]>>;
 }
@@ -75,8 +75,79 @@ export default function ChatSection({
     }
   };
 
+  // ------------- GLOBAL NOTIFICATION LISTENER (works across all projects) -------------
+  useEffect(() => {
+    console.log("🔔 [Notifications] Setting up global mentionNotification listener");
+    console.log("🔔 [Notifications] Socket connected:", socket.connected);
+    console.log("🔔 [Notifications] Socket ID:", socket.id);
+    
+    // Set up mention notification listener once - works for all projects
+    // Backend now sends notifications to all user sockets regardless of project
+    const handleMentionNotification = (data: any) => {
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("🔔 [Notifications] mentionNotification EVENT RECEIVED!");
+      console.log("🔔 [Notifications] Raw data received:", data);
+      console.log("🔔 [Notifications] Data type:", typeof data);
+      console.log("🔔 [Notifications] Data structure:", JSON.stringify(data, null, 2));
+      
+      // Handle different data structures from backend
+      let notificationMessage = '';
+      
+      if (typeof data === 'string') {
+        // If data is directly a string
+        console.log("🔔 [Notifications] Data is a string, using directly");
+        notificationMessage = data;
+      } else if (data?.message) {
+        // If data has a message property
+        console.log("🔔 [Notifications] Found data.message:", data.message);
+        notificationMessage = data.message;
+      } else if (data?.body) {
+        // If data has a body property
+        console.log("🔔 [Notifications] Found data.body:", data.body);
+        notificationMessage = data.body;
+      } else if (data?.text) {
+        // If data has a text property
+        console.log("🔔 [Notifications] Found data.text:", data.text);
+        notificationMessage = data.text;
+      } else {
+        // Fallback: stringify the whole object
+        console.log("🔔 [Notifications] No recognized property, stringifying entire object");
+        notificationMessage = JSON.stringify(data);
+      }
+      
+      if (notificationMessage) {
+        console.log("🔔 [Notifications] ✅ Extracted notification message:", notificationMessage);
+        console.log("🔔 [Notifications] Adding to notifications state...");
+        
+        setNotifications((prevNotifications) => {
+          const updated = [...prevNotifications, notificationMessage];
+          console.log("🔔 [Notifications] ✅ Notification added! Total notifications:", updated.length);
+          console.log("🔔 [Notifications] All notifications:", updated);
+          return updated;
+        });
+      } else {
+        console.warn("🔔 [Notifications] ⚠️ No notification message found in data:", data);
+      }
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    };
+
+    socket.on("mentionNotification", handleMentionNotification);
+    console.log("🔔 [Notifications] ✅ Listener registered successfully");
+
+    return () => {
+      // Only remove notification listener on unmount, not on project change
+      console.log("🔔 [Notifications] Removing mentionNotification listener (component unmounting)");
+      socket.off("mentionNotification", handleMentionNotification);
+    };
+  }, []); // Run once on mount, cleanup on unmount
+
   // ------------- INITIAL LOAD & HANDLING PROJECT CHANGE -------------
   useEffect(() => {
+    console.log("📁 [Project] Project changed to:", projectId);
+    console.log("📁 [Project] Current user ID:", currentUser.id);
+    console.log("📁 [Project] Socket connected:", socket.connected);
+    console.log("📁 [Project] Socket ID:", socket.id);
+    
     // Reset messages when projectId changes
     setMessages([]);
     setSkip(0);
@@ -85,7 +156,9 @@ export default function ChatSection({
     // Fetch new messages for the new project
     fetchMessages();
 
+    console.log("📁 [Project] Emitting joinProject event...");
     socket.emit("joinProject", projectId, currentUser.id);
+    console.log("📁 [Project] ✅ joinProject event emitted");
 
     // Fetch project members when the project changes
     socket.on("projectMembers", (members: ProjectMember[]) => {
@@ -95,6 +168,7 @@ export default function ChatSection({
     socket.on("projectMessages", (msgs: Message[]) => setMessages(msgs));
 
     socket.on("newMessage", (msg: Message) => {
+      console.log("💬 [Messages] New message received:", msg);
       setMessages((prev) => {
         const exists = prev.some((m) => m._id === msg._id);
         return exists ? prev : [...prev, msg];
@@ -102,17 +176,11 @@ export default function ChatSection({
       scrollToBottom();
     });
 
-    // Listen for mention notifications
-    socket.on("mentionNotification", (data) => {
-      console.log(data, 'mentionNotification');
-      setNotifications((prevNotifications) => [...prevNotifications, data.message]);
-    });
-
     return () => {
+      // Clean up project-specific listeners when project changes
       socket.off("projectMembers");
       socket.off("projectMessages");
       socket.off("newMessage");
-      socket.off("mentionNotification");
     };
   }, [projectId]); // Effect will re-run when projectId changes
 
@@ -136,6 +204,16 @@ export default function ChatSection({
   const handleSend = () => {
     if (!message.trim()) return;
 
+    const messageContent = message.trim();
+    const hasMention = messageContent.includes('@');
+    
+    console.log("📤 [Send Message] Preparing to send message...");
+    console.log("📤 [Send Message] Message content:", messageContent);
+    console.log("📤 [Send Message] Contains mention (@):", hasMention);
+    console.log("📤 [Send Message] Project ID:", projectId);
+    console.log("📤 [Send Message] User ID:", currentUser.id);
+    console.log("📤 [Send Message] Username:", currentUser.username || currentUser.email.split('@')[0]);
+
     const tempMsg: Message = {
       _id: Math.random().toString(36).substring(2),
       user: {
@@ -143,7 +221,7 @@ export default function ChatSection({
         firstName: currentUser.firstName,
         lastName: currentUser.lastName,
         email: currentUser.email,
-        username: currentUser.username, // Include username in the message
+        username: currentUser.username || currentUser.email.split('@')[0], // Include username in the message, fallback to email prefix
       },
       content: message,
       createdAt: new Date().toISOString(),
@@ -153,12 +231,16 @@ export default function ChatSection({
     setMessages((prev) => [...prev, tempMsg]);
     scrollToBottom();
 
-    socket.emit("sendMessage", {
+    const sendData = {
       projectId,
-      message: message.trim(),
+      message: messageContent,
       userId: currentUser.id,
-      username: currentUser.username, // Pass the username to the backend
-    });
+      username: currentUser.username || currentUser.email.split('@')[0], // Pass the username to the backend, fallback to email prefix
+    };
+    
+    console.log("📤 [Send Message] Emitting sendMessage event with data:", sendData);
+    socket.emit("sendMessage", sendData);
+    console.log("📤 [Send Message] ✅ sendMessage event emitted");
 
     setMessage("");
   };
