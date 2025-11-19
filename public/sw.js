@@ -1,6 +1,21 @@
 // public/sw.js
 self.addEventListener("push", (event) => {
-    const data = event.data?.json() || {};
+    let data = {};
+    
+    // Handle both JSON and plain string payloads
+    if (event.data) {
+      try {
+        // Try to parse as JSON (from backend)
+        data = event.data.json();
+      } catch (e) {
+        // If parsing fails, treat as plain string (from DevTools testing)
+        const text = event.data.text();
+        data = {
+          title: "New Notification",
+          body: text,
+        };
+      }
+    }
   
     const title = data.title || "New Mention";
     const options = {
