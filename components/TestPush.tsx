@@ -24,17 +24,33 @@ export default function TestPush({ userId }: { userId: string }) {
         setLoading(true);
         try {
             const token = localStorage.getItem('accessToken');
-            const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-            const res = await fetch(`${apiBaseUrl}/api/v1/subscriptions/test-push`, {
+
+            let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            apiBaseUrl = apiBaseUrl.replace(/\/$/, '');
+
+            // If the base URL already includes /api/v1, don't append it again
+            const endpoint = apiBaseUrl.endsWith('/api/v1')
+                ? `${apiBaseUrl}/subscriptions/test-push`
+                : `${apiBaseUrl}/api/v1/subscriptions/test-push`;
+
+            console.log("Debug: Sending request to:", endpoint);
+
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Server error: ${res.status} ${errorText}`);
+            }
+
             const data = await res.json();
             console.log("Test push result:", data);
             alert(data.message || "Test push triggered");
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert("Failed to trigger test push");
+            alert(`Failed to trigger test push: ${error.message}`);
         } finally {
             setLoading(false);
         }
