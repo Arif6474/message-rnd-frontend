@@ -56,6 +56,24 @@ export default function TestPush({ userId }: { userId: string }) {
         }
     };
 
+    const handleLocalTest = async () => {
+        if (!("Notification" in window)) {
+            alert("Notifications not supported");
+            return;
+        }
+
+        if (Notification.permission === "granted") {
+            new Notification("Local Test", { body: "This is a local test notification" });
+        } else if (Notification.permission !== "denied") {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+                new Notification("Local Test", { body: "This is a local test notification" });
+            }
+        } else {
+            alert("Notifications are denied. Please enable them in browser settings.");
+        }
+    };
+
     return (
         <div className="p-4 border rounded-lg bg-white shadow-sm my-4">
             <h3 className="font-bold mb-2">Push Notification Debugger</h3>
@@ -65,6 +83,9 @@ export default function TestPush({ userId }: { userId: string }) {
                 </Button>
                 <Button onClick={handleTriggerPush} disabled={loading}>
                     {loading ? "..." : "2. Send Test Push"}
+                </Button>
+                <Button onClick={handleLocalTest} variant="secondary">
+                    3. Local Test
                 </Button>
             </div>
             <p className="text-xs text-gray-500 mt-2">

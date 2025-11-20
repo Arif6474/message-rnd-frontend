@@ -1,5 +1,6 @@
 // public/sw.js
 self.addEventListener("push", (event) => {
+  console.log("🔔 [SW] Push event received!", event);
   let data = {};
 
   // Handle both JSON and plain string payloads
@@ -7,9 +8,11 @@ self.addEventListener("push", (event) => {
     try {
       // Try to parse as JSON (from backend)
       data = event.data.json();
+      console.log("🔔 [SW] Parsed JSON data:", data);
     } catch (e) {
       // If parsing fails, treat as plain string (from DevTools testing)
       const text = event.data.text();
+      console.log("🔔 [SW] Parsed text data:", text);
       data = {
         title: "New Notification",
         body: text,
@@ -26,7 +29,14 @@ self.addEventListener("push", (event) => {
     tag: data.tag || "mention",
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  console.log("🔔 [SW] Showing notification:", title, options);
+
+  event.waitUntil(
+    self.registration
+      .showNotification(title, options)
+      .then(() => console.log("🔔 [SW] Notification shown successfully"))
+      .catch((err) => console.error("🔔 [SW] Notification show failed:", err))
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
