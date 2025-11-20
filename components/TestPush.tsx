@@ -10,8 +10,17 @@ export default function TestPush({ userId }: { userId: string }) {
     const handleTestSubscription = async () => {
         setLoading(true);
         try {
+            if ("serviceWorker" in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    console.log("Unsubscribing existing subscription...");
+                    await subscription.unsubscribe();
+                }
+            }
+
             await subscribeUserToPush(userId);
-            alert("Subscription attempt finished. Check console for details.");
+            alert("Refreshed subscription! Now try sending a test push.");
         } catch (error) {
             console.error(error);
             alert("Error subscribing");
@@ -79,7 +88,7 @@ export default function TestPush({ userId }: { userId: string }) {
             <h3 className="font-bold mb-2">Push Notification Debugger</h3>
             <div className="flex gap-2">
                 <Button onClick={handleTestSubscription} disabled={loading} variant="outline">
-                    {loading ? "..." : "1. Resubscribe"}
+                    {loading ? "..." : "1. Force Resubscribe"}
                 </Button>
                 <Button onClick={handleTriggerPush} disabled={loading}>
                     {loading ? "..." : "2. Send Test Push"}
