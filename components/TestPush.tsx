@@ -83,6 +83,19 @@ export default function TestPush({ userId }: { userId: string }) {
         }
     };
 
+    const handleUnregisterSW = async () => {
+        if ("serviceWorker" in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                await registration.unregister();
+            }
+            alert("Service Workers unregistered. Please refresh the page to reinstall.");
+            window.location.reload();
+        } else {
+            alert("Service Workers not supported");
+        }
+    };
+
     return (
         <div className="p-4 border rounded-lg bg-white shadow-sm my-4">
             <h3 className="font-bold mb-2">Push Notification Debugger</h3>
@@ -95,6 +108,9 @@ export default function TestPush({ userId }: { userId: string }) {
                 </Button>
                 <Button onClick={handleLocalTest} variant="secondary">
                     3. Local Test
+                </Button>
+                <Button onClick={handleUnregisterSW} variant="destructive">
+                    4. Reset SW
                 </Button>
             </div>
             <p className="text-xs text-gray-500 mt-2">
