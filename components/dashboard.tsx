@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import ProjectList from "@/components/project-list"
 import ProjectDetail from "@/components/project-detail"
 import ChatSection from "@/components/chat-section"
+import TestPush from "@/components/TestPush"
 import { Button } from "@/components/ui/button"
 import { ProjectMember, apiService } from "@/lib/api-service"
 
@@ -115,7 +116,11 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <div className="p-2 text-xs text-gray-500">
               Debug: {notifications.length} notification(s) in state
             </div>
-            
+
+            <div className="p-4">
+              <TestPush userId={user.id} />
+            </div>
+
             {notifications.length > 0 ? (
               <div className="sticky top-0 z-50 p-4 bg-yellow-500 text-white shadow-lg border-4 border-red-500">
                 <div className="flex items-center justify-between mb-2">
