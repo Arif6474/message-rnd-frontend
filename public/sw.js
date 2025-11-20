@@ -23,10 +23,12 @@ self.addEventListener("push", (event) => {
   const title = data.title || "New Mention";
   const options = {
     body: data.body || "You were mentioned in a project",
-    icon: data.icon || "/logo192.png",
-    badge: data.badge || "/badge.png",
+    // icon: data.icon || "/logo192.png", // Commented out to rule out 404s
+    // badge: data.badge || "/badge.png", // Commented out to rule out 404s
     data: data.data || { url: "/" },
-    tag: data.tag || "mention",
+    // tag: data.tag || "mention", // Commented out to prevent silent replacement
+    requireInteraction: true, // Force notification to stay on screen
+    silent: false,
   };
 
   console.log("🔔 [SW] Showing notification:", title, options);
